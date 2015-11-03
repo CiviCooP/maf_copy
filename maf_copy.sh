@@ -13,7 +13,7 @@ backup_files() {
 }
 
 dump_database() {
-    cd $BACKUP_DIR
+    cd $TEMP_DIR
     mysqldump_options="--add-drop-table --no-create-db --routines --triggers"
     mysqldump="mysqldump --user $SRC_MYSQL_USER --password=$SRC_MYSQL_PASS --host=$SRC_MYSQL_HOST $mysql_dump_options"
     $mysqldump $SRC_DRUPAL_DB | sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | sed -e "s/$SRC_HOSTNAME/$DEST_HOSTNAME/" | gzip > $SRC_DRUPAL_DB-$BACKUP_FILE_SUFFIX.sql.gz
@@ -24,7 +24,7 @@ dump_database() {
 
 #copy database
 copy_database() {
-    cd $BACKUP_DIR
+    cd $TEMP_DIR
     mysql="mysql --user $DEST_MYSQL_USER --password=$DEST_MYSQL_PASS --host=$DEST_MYSQL_HOST"
     $mysql -e "CREATE DATABASE IF NOT EXISTS \`$DEST_DRUPAL_DB\`;"
     $mysql -e "CREATE DATABASE IF NOT EXISTS \`$DEST_CIVICRM_DB\`;"
@@ -116,21 +116,18 @@ move_to_new_location() {
 
 clean_up() {
     rm -rf $BACKUP_FILE
-    cd $BACKUP_DIR
+    cd $TEMP_DIR
     rm -rf $SRC_DRUPAL_DB-$BACKUP_FILE_SUFFIX.sql.gz
     rm -rf $SRC_CIVICRM_DB-$BACKUP_FILE_SUFFIX.sql.gz
     cd $CURRENT_PWD
 }
 
 
-#give this process a low priority because we want to prevent it blocks other processes
-renice +19 -p $$
-
 cd $SRC_PATH
 BACKUP_FILE_PREFIX=${PWD##*/}
 BACKUP_FILE_SUFFIX=$(date +%Y%m%d)
 cd $CURRENT_PWD
-BACKUP_FILE="$BACKUP_DIR/$BACKUP_FILE_PREFIX-$BACKUP_FILE_SUFFIX.tgz"
+BACKUP_FILE="$TEMP_DIR/$BACKUP_FILE_PREFIX-$BACKUP_FILE_SUFFIX.tgz"
 
 [ -d $DEST_PATH ] || mkdir $DEST_PATH
 cd $DEST_PATH
