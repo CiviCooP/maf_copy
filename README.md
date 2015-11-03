@@ -1,7 +1,7 @@
 # maf_copy
 Script for copying live to test for MAf Norge
 
-## Usage Copy live to temp
+## Usage Copy live to test
 
     $ ./maf_copy.sh
 
