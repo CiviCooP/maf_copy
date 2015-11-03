@@ -2,10 +2,6 @@
 
 # Get a sane screen width
 [ -z "${COLUMNS:-}" ] && COLUMNS=80
- 
-if [ -f /etc/sysconfig/i18n -a -z "${NOLOCALE:-}" ] ; then
-  . /etc/profile.d/lang.sh
-fi
 
 # Read in our configuration
 if [ -z "${BOOTUP:-}" ]; then
@@ -46,15 +42,14 @@ echo_failure() {
 
 # Log that something succeeded
 success() {
-  [ "$BOOTUP" != "verbose" -a -z "${LSB:-}" ] && echo_success
+  echo_success
   return 0
 }
  
 # Log that something failed
 failure() {
   local rc=$?
-  [ "$BOOTUP" != "verbose" -a -z "${LSB:-}" ] && echo_failure
-  [ -x /usr/bin/rhgb-client ] && /usr/bin/rhgb-client --details=yes
+  echo_failure
   return $rc
 }
 
@@ -63,21 +58,9 @@ action() {
  
   STRING=$1
   echo -n "$STRING "
-  if [ "${RHGB_STARTED:-}" != "" -a -w /etc/rhgb/temp/rhgb-console ]; then
-      echo -n "$STRING " > /etc/rhgb/temp/rhgb-console
-  fi
   shift
   "$@" && success $"$STRING" || failure $"$STRING"
   rc=$?
   echo
-  if [ "${RHGB_STARTED:-}" != "" -a -w /etc/rhgb/temp/rhgb-console ]; then
-      if [ "$rc" = "0" ]; then
-      	echo_success > /etc/rhgb/temp/rhgb-console
-      else
-        echo_failure > /etc/rhgb/temp/rhgb-console
-	[ -x /usr/bin/rhgb-client ] && /usr/bin/rhgb-client --details=yes
-      fi
-      echo > /etc/rhgb/temp/rhgb-console
-  fi
   return $rc
 }

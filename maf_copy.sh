@@ -1,5 +1,5 @@
 #! /bin/bash
-CURRENT_PWD=${PDW}
+CURRENT_PWD=$(pwd)
 source parameters.sh
 source echo_functions.sh
 
@@ -136,7 +136,17 @@ cd $SRC_PATH
 SRC_NAME=${PWD##*/} 
 cd $CURRENT_PWD
 
+PID_FILE="$CURRENT_PWD/pid"
 
+if [ -e "$PID_FILE" ]
+then
+    echo -n "Script already running "
+    echo_failure $"Script already running "
+    echo
+    exit 0
+fi
+
+echo "$(date +%Y%m%d%H%M)" > $PID_FILE
 action "Backup files" backup_files
 action "Extract backup" extract_files
 action "Update CiviCRM's civicrm.settings.php" update_civicrm_settings_file
@@ -150,6 +160,8 @@ action "Disable SMS providers" disable_sms_providers
 action "Disable scheduled jobs" disable_scheduled_jobs
 action "Move files" move_to_new_location
 action "Clean up" clean_up
+
+rm -rf $PID_FILE
 
 cd $CURRENT_PWD
 exit 0

@@ -1,5 +1,5 @@
 #! /bin/bash
-CURRENT_PWD=${PDW}
+CURRENT_PWD=$(pwd)
 source parameters.sh
 source echo_functions.sh
 
