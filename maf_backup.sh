@@ -16,7 +16,7 @@ dump_database() {
     cd $BACKUP_DIR
     mysqldump_options="--add-drop-table --no-create-db --routines --triggers"
     mysqldump="mysqldump --user $SRC_MYSQL_USER --password=$SRC_MYSQL_PASS --host=$SRC_MYSQL_HOST $mysql_dump_options"
-    $mysqldump $SRC_DRUPAL_DB | sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | sed -e "s/$SRC_HOSTNAME/$DEST_HOSTNAME/" | gzip > $SRC_DRUPAL_DB-$BACKUP_FILE_SUFFIX.sql.gz
+    $mysqldump $SRC_DRUPAL_DB | sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | sed -e "s#$SRC_HOSTNAME#$DEST_HOSTNAME#" | gzip > $SRC_DRUPAL_DB-$BACKUP_FILE_SUFFIX.sql.gz    
     $mysqldump $SRC_CIVICRM_DB | sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | gzip > $SRC_CIVICRM_DB-$BACKUP_FILE_SUFFIX.sql.gz
     cd $CURRENT_PWD
     return 0

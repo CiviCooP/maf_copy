@@ -16,7 +16,7 @@ dump_database() {
     cd $TEMP_DIR
     mysqldump_options="--add-drop-table --no-create-db --routines --triggers"
     mysqldump="mysqldump --user $SRC_MYSQL_USER --password=$SRC_MYSQL_PASS --host=$SRC_MYSQL_HOST $mysql_dump_options"
-    $mysqldump $SRC_DRUPAL_DB | sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | sed -e "s/$SRC_HOSTNAME/$DEST_HOSTNAME/" | gzip > $SRC_DRUPAL_DB-$BACKUP_FILE_SUFFIX.sql.gz
+    $mysqldump $SRC_DRUPAL_DB | sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | sed -e "s#$SRC_HOSTNAME#$DEST_HOSTNAME#" | gzip > $SRC_DRUPAL_DB-$BACKUP_FILE_SUFFIX.sql.gz
     $mysqldump $SRC_CIVICRM_DB | sed -e 's/DEFINER[ ]*=[ ]*[^*]*\*/\*/' | gzip > $SRC_CIVICRM_DB-$BACKUP_FILE_SUFFIX.sql.gz
     cd $CURRENT_PWD
     return 0
@@ -41,6 +41,8 @@ update_drupal_database_settings() {
     #update drupal settings
     UPDATE_COLOR_SQL="UPDATE drupal_variable SET VALUE='a:9:{s:3:\"top\";s:7:\"#4c1c58\";s:6:\"bottom\";s:7:\"#593662\";s:2:\"bg\";s:7:\"#fffdf7\";s:7:\"sidebar\";s:7:\"#edede7\";s:14:\"sidebarborders\";s:7:\"#e7e7e7\";s:6:\"footer\";s:7:\"#2c2c28\";s:11:\"titleslogan\";s:7:\"#ffffff\";s:4:\"text\";s:7:\"#301313\";s:4:\"link\";s:7:\"#9d408d\";}' WHERE name='color_bartik_palette' OR name='color_civi_bartik_palette';"
     $mysql --database=$DEST_DRUPAL_DB -e "$UPDATE_COLOR_SQL"
+    UPDATE_SITE_NAME="UPDATE drupal_variable SET VALUE='s:4:\"TEST\"' WHERE name = 'site_name';"
+    $mysql --database=$DEST_DRUPAL_DB -e "$UPDATE_SITE_NAME"
     return 0
 }
 
@@ -83,6 +85,7 @@ extract_files() {
     exit_status=$?
     if [ $exit_status -eq 0 ]; then
         mv $TEMP_DIR/$SRC_NAME $TEMP_DIR/$DEST_NAME
+        chmod u+w $TEMP_DIR/$DEST_NAME/sites/default
         return 0
     fi
     return 1
@@ -90,6 +93,7 @@ extract_files() {
 
 update_civicrm_settings_file() {
     #change civicrm.settings.php
+    chmod u+w $TEMP_DIR/$DEST_NAME/sites/default/civicrm.settings.php
     sed -i "s#mysql://$SRC_MYSQL_USER:$SRC_MYSQL_PASS@$SRC_MYSQL_HOST/$SRC_DRUPAL_DB?#mysql://$DEST_MYSQL_USER:$DEST_MYSQL_PASS@$DEST_MYSQL_HOST/$DEST_DRUPAL_DB?#" $TEMP_DIR/$DEST_NAME/sites/default/civicrm.settings.php
     sed -i "s#mysql://$SRC_MYSQL_USER:$SRC_MYSQL_PASS@$SRC_MYSQL_HOST/$SRC_CIVICRM_DB?#mysql://$DEST_MYSQL_USER:$DEST_MYSQL_PASS@$DEST_MYSQL_HOST/$DEST_CIVICRM_DB?#" $TEMP_DIR/$DEST_NAME/sites/default/civicrm.settings.php
     sed -i "s@$SRC_PATH/@$DEST_PATH/@" $TEMP_DIR/$DEST_NAME/sites/default/civicrm.settings.php
@@ -99,17 +103,19 @@ update_civicrm_settings_file() {
 
 update_drupal_settings_file() {
     #change drupal.settings.php
+    chmod u+w $TEMP_DIR/$DEST_NAME/sites/default/settings.php
     sed -i "s/'database' => '$SRC_DRUPAL_DB',/'database' => '$DEST_DRUPAL_DB',/" $TEMP_DIR/$DEST_NAME/sites/default/settings.php
     sed -i "s/'username' => '$SRC_MYSQl_USER',/'username' => '$DEST_MYSQl_USER',/" $TEMP_DIR/$DEST_NAME/sites/default/settings.php
     sed -i "s/'password' => '$SRC_MYSQl_PASS',/'password' => '$DEST_MYSQl_PASS',/" $TEMP_DIR/$DEST_NAME/sites/default/settings.php
     sed -i "s/'host' => '$SRC_MYSQl_HOST',/'host' => '$DEST_MYSQl_HOST',/" $TEMP_DIR/$DEST_NAME/sites/default/settings.php
-    sed -i "s/$SRC_HOSTNAME/$DEST_HOSTNAME/" $TEMP_DIR/$DEST_NAME/sites/default/settings.php
+    sed -i "s@$SRC_HOSTNAME@$DEST_HOSTNAME@" $TEMP_DIR/$DEST_NAME/sites/default/settings.php
     sed -i "s/=> '\`$SRC_CIVICRM_DB\`.',/=> '\`$DEST_CIVICRM_DB\`.',/" $TEMP_DIR/$DEST_NAME/sites/default/settings.php
     return 0
 }
 
 move_to_new_location() {
     #ok move to destination
+    chmod -R u+w $DEST_PATH
     rm -rf $DEST_PATH
     mv $TEMP_DIR/$DEST_NAME $DEST_PATH
 }
